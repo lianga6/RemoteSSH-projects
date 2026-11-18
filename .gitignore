@@ -1,0 +1,8 @@
+# Ignore all mounted remote project directories by default
+/*
+
+# Track only the workspace hub configuration, docs, and skills
+!.gitignore
+!README.md
+!AGENTS.md
+!.agents/
