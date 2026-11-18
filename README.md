@@ -15,7 +15,7 @@ A local Windows workspace hub for mounting and operating remote Linux projects o
 ### 2. `codex-subagent-executor`
 - **Path**: [`.agents/skills/codex-subagent-executor/SKILL.md`](./.agents/skills/codex-subagent-executor/SKILL.md)
 - **Purpose**: Master–worker orchestration where Gemini handles planning, task decomposition, and final `git diff` review while delegating heavy implementation (multi-file generation, refactoring, unit tests, batch edits) to headless `codex` CLI with compressed prompts and automatic quota/rate-limit fallback.
-- **Customizable Default Model**: You can choose your own default GPT/Codex model by setting `-Model` in [`run_codex.ps1`](./.agents/skills/codex-subagent-executor/scripts/run_codex.ps1) or updating the default in `SKILL.md` (currently preset to `gpt6.1-sol-中` as an example).
+- **Customizable Default Model**: You can choose your own default GPT/Codex model and reasoning effort by setting `-Model` / `-ReasoningEffort` in [`run_codex.ps1`](./.agents/skills/codex-subagent-executor/scripts/run_codex.ps1) or updating the defaults in `SKILL.md` (currently preset to `gpt-6.1-sol` with `model_reasoning_effort=medium` as an example; supports both local and `-SshTarget` remote execution).
 
 ## Git Scope Convention
 

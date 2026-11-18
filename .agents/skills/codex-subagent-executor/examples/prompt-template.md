@@ -1,6 +1,6 @@
 # Codex Structured Dispatch Template
 
-Use this minimal template when delegating a subtask to Codex CLI (`-m gpt6.1-sol-中`). Keep it concise and free of unrelated conversation history.
+Use this minimal template when delegating a subtask to Codex CLI (`-m gpt-6.1-sol -c model_reasoning_effort=medium`). Keep it concise and free of unrelated conversation history.
 
 ## Template
 

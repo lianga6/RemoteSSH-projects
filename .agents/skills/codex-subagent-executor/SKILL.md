@@ -5,8 +5,9 @@ description: >-
   (master planner) using a master-worker pattern. Use this skill whenever a task
   involves multi-file code generation, large refactoring, unit test authoring,
   batch edits, boilerplate generation, or complex bug fixing where delegating
-  implementation to Codex CLI (-m gpt6.1-sol-中) saves Gemini context/quota
-  while protecting GPT quota through compressed, structured prompts.
+  implementation to Codex CLI (-m gpt-6.1-sol, reasoning effort medium) saves
+  Gemini context/quota while protecting GPT quota through compressed, structured
+  prompts.
 ---
 
 # Codex Subagent Executor (Master–Worker Pattern)
@@ -15,10 +16,10 @@ Use **Gemini** as the master planner (requirement analysis, task decomposition, 
 
 ## 1. Model & Headless CLI Defaults (Mandatory)
 
-- **Default Model**: `gpt6.1-sol-中` (user-configurable—you may change the default GPT/Codex model in this file or `scripts/run_codex.ps1` to any preferred model, passed via `-m <model>`).
-- **Model Escalation (Requires User Approval)**: If Gemini determines that a task exceeds `gpt6.1-sol-中`'s capability (e.g., intricate cross-module architecture, subtle concurrency/algorithm bugs, or correctness failures after clear prompts), **do not** switch models silently. Pause and ask the user for permission to use a stronger Codex model, stating the reason and the target subtask; once approved, pass the user-specified model via `-Model "<model_name>"`.
-- **Headless / Non-Interactive Only**: Always invoke Codex in non-interactive mode (e.g., `codex exec ...` or `--quiet` / `--full-auto` depending on the installed CLI version). **NEVER** launch the interactive TUI (`codex` without headless subcommand/flags), as it blocks the terminal.
-- **Working Directory**: Run inside the target project root (if working on a mounted remote project, check whether `codex` should run locally on the mounted path or over SSH if `codex` is installed on the remote host).
+- **Default Model & Reasoning**: `gpt-6.1-sol` with `-c model_reasoning_effort=medium` (user-configurable—you may change the default model or reasoning effort in this file or `scripts/run_codex.ps1` to any preferred model). **Important**: `-m` must be pure ASCII (never pass non-ASCII suffixes like `-中` in `-m`, as Codex CLI sends `-m` in the `x-codex-routing-hint` header).
+- **Model Escalation (Requires User Approval)**: If Gemini determines that a task exceeds `gpt-6.1-sol` (`medium` reasoning) capability (e.g., intricate cross-module architecture, subtle concurrency/algorithm bugs, or correctness failures after clear prompts), **do not** switch models silently. Pause and ask the user for permission to escalate (e.g. higher reasoning effort or a stronger Codex model), stating the reason and the target subtask; once approved, pass `-Model "<model_name>"` / `-ReasoningEffort "<effort>"`.
+- **Headless / Non-Interactive Only**: Always invoke Codex in non-interactive mode (`codex exec ...`). **NEVER** launch the interactive TUI (`codex` without `exec`), as it blocks the terminal.
+- **Local vs. Remote SSH Execution**: If `codex` is installed on the remote SSH server rather than locally, pass `-SshTarget "<user>@<host>"` to `run_codex.ps1` (which uses `ssh -n` to close stdin so `codex exec` never hangs at `Reading additional input from stdin...`).
 
 ## 2. Task Routing Decision Tree
 
@@ -48,21 +49,24 @@ Before invoking Codex, evaluate quota ROI:
 ### Step 1: Assess Complexity & Quota ROI
 Decide via Section 2 whether to handle directly in Gemini or delegate to Codex. If delegating and the task is large, break it into 2–4 focused subtasks first.
 
-### Step 2: Probe Local `codex` CLI (First Run per Session)
-Verify the `codex` binary path and exact CLI flags before dispatching work:
+### Step 2: Probe `codex` CLI (First Run per Session)
+Verify the `codex` binary path and exact CLI flags before dispatching work (add `-SshTarget "<user>@<host>"` when running on a remote SSH host):
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\.agents\skills\codex-subagent-executor\scripts\run_codex.ps1 -Probe
+# Or on remote SSH host:
+powershell -ExecutionPolicy Bypass -File .\.agents\skills\codex-subagent-executor\scripts\run_codex.ps1 -Probe -SshTarget "<user>@<host>"
 ```
 Confirm the exact flags for:
-- Model selection (must pass `gpt6.1-sol-中`)
-- Non-interactive execution (`exec` / `--quiet`)
-- Auto-approval / sandbox mode (`--full-auto` / `--approval-mode` / `--sandbox`)
+- Model selection (`-m gpt-6.1-sol`) and reasoning effort (`-c model_reasoning_effort=medium`)
+- Non-interactive execution (`exec`)
+- Auto-approval / sandbox mode (`--full-auto` / `--sandbox read-only`)
 
 ### Step 3: Build Minimal Prompt & Execute Headlessly
-Pass the compressed structured prompt via [run_codex.ps1](./scripts/run_codex.ps1) (or the verified `codex exec -m gpt6.1-sol-中 ...` command), capturing stdout/stderr and exit code:
+Pass the compressed structured prompt via [run_codex.ps1](./scripts/run_codex.ps1), capturing stdout/stderr and exit code:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\.agents\skills\codex-subagent-executor\scripts\run_codex.ps1 `
   -WorkDir "<project_path>" `
+  -SshTarget "<user>@<host>" `
   -Prompt "<compressed_structured_prompt>"
 ```
 
@@ -82,4 +86,4 @@ Monitor the `codex` CLI **Exit Code** and **stderr**:
   - **2 consecutive execution failures**
 - **Fallback action**: Stop retrying Codex immediately. Report current progress and the exact error to the user:
   - For quota/rate-limit/token-overflow errors, switch to Gemini to complete the remaining steps or await user instructions.
-  - For repeated logic/correctness failures where `gpt6.1-sol-中` appears underpowered for the task, explicitly ask the user whether to escalate to a stronger Codex model (specifying which model/subtask) or let Gemini take over.
+  - For repeated logic/correctness failures where `gpt-6.1-sol` (`medium` reasoning) appears underpowered for the task, explicitly ask the user whether to escalate (e.g. `high` reasoning or a stronger Codex model, specifying which model/subtask) or let Gemini take over.
