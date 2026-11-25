@@ -14,8 +14,9 @@ This workspace is a local hub for working on remote Linux projects over SSH + SS
 
 ## Defaults & Local Configuration
 
-- **SSH target**: Use the `<user>@<host>` (or SSH alias in `~/.ssh/config`) provided by the user or stored in a local gitignored config file (never commit real IPs or usernames to this repository).
-- **Remote projects root**: `<remote_workspace>` (e.g., `/home/<user>/workspace`, unless the user provides an absolute path).
+- **SSH target**: Use the `<user>@<host>` (or SSH alias in `~/.ssh/config`) provided by the user or stored in a local gitignored config file (never commit real IPs or usernames to public repositories).
+- **Configured Project (`task_combination`)**: `lxl@10.102.137.137:/home/lxl/workspace/task_combination` → local mount point `E:/projects/RemoteSSH-projects/task_combination`
+- **Remote projects root**: `/home/lxl/workspace` (unless the user provides another absolute path).
 - **SSHFS executable**: `C:\Program Files\SSHFS-Win\bin\sshfs.exe`
 - **Bundled SSH binary**: `/usr/bin/ssh` (required via `-o ssh_command="/usr/bin/ssh"` because Windows' built-in OpenSSH has a socketpair/pipe incompatibility with Cygwin-based `sshfs.exe`).
 
@@ -40,9 +41,9 @@ This workspace is a local hub for working on remote Linux projects over SSH + SS
    If an empty stale directory exists (not mounted), remove it first (`Remove-Item`), because WinFsp requires the mount point directory not to exist beforehand.
 
 2. **Start SSHFS daemon**:
-   Use forward slashes for the local mount point path and run as a background daemon (`IsDaemon: true`, `BypassSandbox: true`):
+   Use forward slashes for the local mount point path and run as a background daemon (`IsDaemon: true`, `BypassSandbox: true`). Always include `-o uid=-1,gid=-1` so SSHFS-Win maps the local Windows user to the remote SSH user (preventing `Access denied` on remote directories with `750`/`700` permissions or restricted `other::---` ACLs):
    ```powershell
-   & "C:\Program Files\SSHFS-Win\bin\sshfs.exe" -f <user>@<host>:<remote_workspace>/<project_name> "<workspace_root_forward_slashes>/<project_name>" -o ssh_command="/usr/bin/ssh" -o reconnect -o ServerAliveInterval=15 -o ServerAliveCountMax=3
+   & "C:\Program Files\SSHFS-Win\bin\sshfs.exe" -f <user>@<host>:<remote_workspace>/<project_name> "<workspace_root_forward_slashes>/<project_name>" -o ssh_command="/usr/bin/ssh" -o reconnect -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o uid=-1,gid=-1
    ```
 
 3. **Verify the mount**:
