@@ -70,11 +70,14 @@ powershell -ExecutionPolicy Bypass -File .\.agents\skills\codex-subagent-executo
   -Prompt "<compressed_structured_prompt>"
 ```
 
-### Step 4: Fast Code Review & Report
-After Codex finishes:
-1. Run `git diff --stat` and `git diff` (or inspect only the modified line ranges) — **do not** re-read entire unmodified files in Gemini to avoid wasting Gemini quota.
-2. Verify the acceptance command passed.
-3. Report the concise outcome and diff summary to the user.
+### Step 4: Review, Acceptance & Optimization (Gemini)
+After Codex finishes, Gemini must not blindly pass through the output—it is responsible for **Review, Acceptance, and Optimization**:
+1. **Review (审查)**: Run `git status` and `git diff --stat` / `git diff` (inspect only modified hunks—**do not** re-read entire unmodified files to save Gemini quota). Check correctness, edge cases, readability, naming, duplication, and scope compliance (no unrelated edits).
+2. **Acceptance (验收)**: Independently verify that the acceptance/test command(s) pass after the final edit.
+3. **Optimization (优化)**:
+   - For small polish (1–few lines, minor naming/docstring/guard fixes), Gemini optimizes directly and re-runs the verification command.
+   - For larger structural or logic fixes, resume the Codex session (`codex exec resume <session_id> "<targeted review feedback>"`) so Codex refines it with preserved context, then re-verify `git diff` and tests.
+4. Report the verified outcome, optimizations made (if any), and diff summary to the user.
 
 ## 5. Exception Handling & Fallback
 
