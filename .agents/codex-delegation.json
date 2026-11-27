@@ -1,0 +1,4 @@
+{
+  "enabled": false,
+  "note": "Toggle autonomous Codex CLI delegation (true = auto-delegate heavy coding to Codex; false = Gemini handles directly unless explicitly requested)."
+}
